@@ -6,8 +6,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -114,7 +112,7 @@ public class DownloadController {
     }
 
     @GetMapping("/download/{otp}/encrypted")
-    @Operation(summary = "Redeem a 6-digit OTP and return encrypted bytes for client-side decryption")
+    @Operation(summary = "Redeem a 6-digit OTP and redirect to signed URL for client-side decryption")
     public ResponseEntity<?> downloadEncrypted(
             @PathVariable String otp,
             HttpServletRequest request) {
@@ -143,23 +141,25 @@ public class DownloadController {
         String uuid = entry.uuid();
         int remaining = otpService.decrementAndMaybeDelete(otp, entry);
 
-        byte[] encryptedBytes;
+        String signedUrl;
         try {
-            encryptedBytes = storageService.download(uuid);
+            signedUrl = storageService.generatePresignedUrl(uuid);
         } catch (Exception e) {
-            log.error("Failed to download encrypted bytes for uuid={}: {}", uuid, e.getMessage());
+            log.error("Failed to generate signed URL for uuid={}: {}", uuid, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Failed to download encrypted file."));
+                    .body(new ErrorResponse("Failed to generate download link."));
         }
 
         if (remaining == 0) {
             cleanupService.deleteAsync(uuid);
         }
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"folderdrop-" + otp + ".fdenc\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(encryptedBytes);
+        log.info("DownloadEncrypted redirect: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
+
+        // Redirect the browser directly to Supabase — avoids buffering large files in the backend
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(signedUrl))
+                .build();
     }
 
     /**

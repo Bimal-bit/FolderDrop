@@ -37,21 +37,24 @@ function HeroHeading() {
     <motion.h1
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.18, delayChildren: 0.1 } } }}
+      variants={{ visible: { transition: { staggerChildren: 0.2, delayChildren: 0.08 } } }}
     >
       {lines.map((line, i) => (
         <motion.span
           key={i}
           style={{ display: 'block' }}
           variants={{
-            hidden: { opacity: 0, y: 24, filter: 'blur(6px)' },
+            hidden: { opacity: 0, y: 20, filter: 'blur(8px)' },
             visible: {
               opacity: 1, y: 0, filter: 'blur(0px)',
-              transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+              transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
             },
           }}
         >
-          {i === lines.length - 1 ? <span>{line}</span> : line}
+          {/* Preserve the original accent color on "Done." via .hero h1 span */}
+          {i === lines.length - 1
+            ? <span style={{ color: 'var(--accent)' }}>{line}</span>
+            : line}
         </motion.span>
       ))}
     </motion.h1>

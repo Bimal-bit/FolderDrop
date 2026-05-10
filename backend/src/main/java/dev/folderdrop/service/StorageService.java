@@ -127,7 +127,7 @@ public class StorageService {
         HttpHeaders headers = authHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        Map<String, Integer> body = Map.of("expiresIn", 60);
+        Map<String, Integer> body = Map.of("expiresIn", 300);
         HttpEntity<Map<String, Integer>> entity = new HttpEntity<>(body, headers);
 
         try {
