@@ -123,19 +123,19 @@ export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: Rece
       <form onSubmit={handleSubmit} noValidate className="receiver-form">
         <OtpInput value={otp} onChange={handleOtpChange} disabled={isDisabled} />
 
-        <label className="custom-exclude">
+        <label className="custom-exclude" htmlFor="decryption-key-input">
           <span>Decryption key</span>
           <input
+            id="decryption-key-input"
+            name="decryptionKey"
             value={decryptionKey}
             onChange={(e) => {
               const val = e.target.value;
-              // Accept a full secure link and extract the key from the fragment
               try {
                 const hashMatch = val.match(/#key=([^&\s]+)/);
                 if (hashMatch) {
                   const extractedKey = decodeURIComponent(hashMatch[1]);
                   setDecryptionKey(extractedKey);
-                  // Also extract OTP from the link if present
                   const codeMatch = val.match(/[?&]code=(\d{6})/);
                   if (codeMatch) setOtp(codeMatch[1]);
                   return;

@@ -51,9 +51,8 @@ function HeroHeading() {
             },
           }}
         >
-          {/* Preserve the original accent color on "Done." via .hero h1 span */}
           {i === lines.length - 1
-            ? <span style={{ color: 'var(--accent)' }}>{line}</span>
+            ? <span className="hero-accent">{line}</span>
             : line}
         </motion.span>
       ))}

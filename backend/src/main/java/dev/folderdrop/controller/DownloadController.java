@@ -112,7 +112,7 @@ public class DownloadController {
     }
 
     @GetMapping("/download/{otp}/encrypted")
-    @Operation(summary = "Redeem a 6-digit OTP and redirect to signed URL for client-side decryption")
+    @Operation(summary = "Redeem a 6-digit OTP and return signed URL for client-side decryption")
     public ResponseEntity<?> downloadEncrypted(
             @PathVariable String otp,
             HttpServletRequest request) {
@@ -154,12 +154,11 @@ public class DownloadController {
             cleanupService.deleteAsync(uuid);
         }
 
-        log.info("DownloadEncrypted redirect: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
+        log.info("DownloadEncrypted: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
 
-        // Redirect the browser directly to Supabase — avoids buffering large files in the backend
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(signedUrl))
-                .build();
+        // Return the signed URL as JSON — browser fetches directly from Supabase
+        // This avoids buffering large files through the backend
+        return ResponseEntity.ok(new DownloadUrlResponse(signedUrl));
     }
 
     /**
@@ -217,4 +216,5 @@ public class DownloadController {
 
     public record ErrorResponse(String error) {}
     public record InfoResponse(int maxDownloads, int remaining) {}
+    public record DownloadUrlResponse(String url) {}
 }

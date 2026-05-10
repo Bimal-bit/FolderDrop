@@ -361,7 +361,8 @@ button:disabled {
   color: var(--text-primary);
 }
 
-.hero h1 span {
+.hero h1 span,
+.hero-accent {
   color: var(--accent);
 }
 
