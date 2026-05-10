@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://folderdrop.onrender.com/api/:path*"
+    },
+    {
+      "source": "/actuator/:path*",
+      "destination": "https://folderdrop.onrender.com/actuator/:path*"
     }
   ]
 }

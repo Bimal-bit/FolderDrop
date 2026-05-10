@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, DragEvent, useContext } from 'react';
 import JSZip from 'jszip';
-import { uploadZip, UploadProgress } from '../api/upload';
+import { uploadZip, pingBackend, UploadProgress } from '../api/upload';
 import { buildSecureRedeemUrl, encryptBlob } from '../api/crypto';
 import { QrCode } from './QrCode';
 import { ShareButtons } from './ShareButtons';
@@ -159,8 +159,11 @@ export function SenderView({ onBack }: SenderViewProps) {
 
     setStatus('zipping');
     setProgress(0);
-    setProgressLabel(mode === 'folder' ? 'Zipping folder...' : 'Preparing files...');
+    setProgressLabel(mode === 'folder' ? 'Waking server...' : 'Waking server...');
     setUploadSpeed('');
+
+    // Wake the Render backend in parallel while we start zipping
+    const wakePromise = pingBackend();
 
     try {
       let zipBlob: Blob;
@@ -168,6 +171,7 @@ export function SenderView({ onBack }: SenderViewProps) {
 
       if (mode === 'folder' || files.length >= 1) {
         const zip = new JSZip();
+        setProgressLabel(mode === 'folder' ? 'Zipping folder...' : 'Preparing files...');
         for (let i = 0; i < files.length; i++) {
           const f = files[i];
           zip.file(f.webkitRelativePath || f.name, f);
@@ -189,6 +193,7 @@ export function SenderView({ onBack }: SenderViewProps) {
       setProgressLabel('Encrypting...');
       const encrypted = await encryptBlob(zipBlob);
       setProgressLabel('Uploading encrypted archive...');
+      await wakePromise; // ensure backend is awake before sending
       uploadStartRef.current = Date.now();
       uploadedBytesRef.current = 0;
 

@@ -13,6 +13,22 @@ export interface UploadOptions {
   maxDownloads?: number;
 }
 
+/**
+ * Pings the backend health endpoint to wake a cold Render instance.
+ * Waits up to 60 s for a 200 response before giving up silently.
+ */
+export async function pingBackend(): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+  try {
+    await fetch('/actuator/health', { signal: controller.signal });
+  } catch {
+    // ignore — best-effort wake-up
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function uploadZip(
   encryptedBlob: Blob,
   fileName: string,
