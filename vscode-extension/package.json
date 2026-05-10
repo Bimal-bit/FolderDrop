@@ -20,7 +20,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/folderdrop/vscode-folder-drop"
+    "url": "https://github.com/Bimal-bit/filedropMenu"
   },
   "activationEvents": [
     "onCommand:folderdrop.shareFolder",
@@ -60,7 +60,7 @@
       "properties": {
         "folderdrop.serverUrl": {
           "type": "string",
-          "default": "https://your-folderdrop-app.onrender.com",
+          "default": "https://folderdrop.onrender.com",
           "description": "URL of your FolderDrop backend server.",
           "order": 1
         },
