@@ -25,7 +25,8 @@ RUN ./mvnw dependency:go-offline -B -q
 COPY backend/src/ src/
 COPY --from=web-build /web-ui/dist/ src/main/resources/static/
 
-RUN ./mvnw package -DskipTests -B -q
+RUN ./mvnw package -DskipTests -Dskip.frontend=true -B -q
+
 
 # Stage 3: Runtime image.
 FROM eclipse-temurin:21-jre-alpine AS runtime
