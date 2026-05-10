@@ -4,8 +4,8 @@ server:
 spring:
   servlet:
     multipart:
-      max-file-size: 55MB
-      max-request-size: 55MB
+      max-file-size: 160MB
+      max-request-size: 160MB
 
 folderdrop:
   upstash:
@@ -18,7 +18,7 @@ folderdrop:
   otp:
     ttl-seconds: 600
   upload:
-    max-size-mb: 50
+    max-size-mb: 150
   internal-token: ${INTERNAL_CLEANUP_TOKEN}
 
 management:

@@ -27,7 +27,7 @@ function SendIcon() {
   );
 }
 
-const MAX_SIZE_MB = 50;
+const MAX_SIZE_MB = 150;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const DEFAULT_CUSTOM_EXCLUDES = '*.log, .DS_Store';
 
@@ -170,18 +170,27 @@ export function SenderView({ onBack }: SenderViewProps) {
       let uploadName: string;
 
       if (mode === 'folder' || files.length >= 1) {
-        const zip = new JSZip();
-        setProgressLabel(mode === 'folder' ? 'Zipping folder...' : 'Preparing files...');
-        for (let i = 0; i < files.length; i++) {
-          const f = files[i];
-          zip.file(f.webkitRelativePath || f.name, f);
-          setProgress(Math.round(((i + 1) / files.length) * 40));
+        // If it's a single already-zipped file, skip re-zipping entirely
+        const isSingleZip = files.length === 1 && files[0].name.toLowerCase().endsWith('.zip');
+        if (isSingleZip) {
+          zipBlob = files[0];
+          uploadName = files[0].name;
+          setProgress(50);
+        } else {
+          const zip = new JSZip();
+          setProgressLabel(mode === 'folder' ? 'Zipping folder...' : 'Preparing files...');
+          for (let i = 0; i < files.length; i++) {
+            const f = files[i];
+            zip.file(f.webkitRelativePath || f.name, f);
+            setProgress(Math.round(((i + 1) / files.length) * 40));
+          }
+          // Use level 1 (fastest) — encryption makes further compression pointless
+          zipBlob = await zip.generateAsync(
+            { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 1 } },
+            (meta) => setProgress(Math.round(meta.percent * 0.5))
+          );
+          uploadName = selectedName.endsWith('.zip') ? selectedName : `${selectedName}.zip`;
         }
-        zipBlob = await zip.generateAsync(
-          { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
-          (meta) => setProgress(Math.round(meta.percent * 0.5))
-        );
-        uploadName = selectedName.endsWith('.zip') ? selectedName : `${selectedName}.zip`;
       } else {
         zipBlob = files[0];
         uploadName = files[0].name;

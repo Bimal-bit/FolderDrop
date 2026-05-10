@@ -74,7 +74,7 @@ export async function uploadZip(
     xhr.addEventListener('error', () => reject(new Error('SERVER_UNREACHABLE')));
     xhr.addEventListener('timeout', () => reject(new Error('SERVER_UNREACHABLE')));
 
-    xhr.timeout = 120_000;
+    xhr.timeout = 300_000;
     xhr.open('POST', '/api/upload');
     xhr.send(formData);
   });

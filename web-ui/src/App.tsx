@@ -31,11 +31,160 @@ function FolderIcon() {
   );
 }
 
+function HeroHeading() {
+  const lines = ['Share code.', 'Get a key.', 'Done.'];
+  return (
+    <motion.h1
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.18, delayChildren: 0.1 } } }}
+    >
+      {lines.map((line, i) => (
+        <motion.span
+          key={i}
+          style={{ display: 'block' }}
+          variants={{
+            hidden: { opacity: 0, y: 24, filter: 'blur(6px)' },
+            visible: {
+              opacity: 1, y: 0, filter: 'blur(0px)',
+              transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+            },
+          }}
+        >
+          {i === lines.length - 1 ? <span>{line}</span> : line}
+        </motion.span>
+      ))}
+    </motion.h1>
+  );
+}
+
 function ArrowIcon() {
   return (
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 12h14M12 5l7 7-7 7" />
     </svg>
+  );
+}
+
+const FEATURES = [
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" /><path d="M12 8v4l3 3" /></svg>,
+    title: '10-minute expiry',
+    desc: 'Codes self-destruct after 10 minutes. Nothing lingers on any server.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 11A6 6 0 0 0 6.06 11M1 1l22 22M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /></svg>,
+    title: 'Burn after download',
+    desc: 'Each code works exactly once. First download destroys it permanently.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /></svg>,
+    title: 'Zero accounts',
+    desc: 'No sign-up, no tracking. Share from VS Code, receive in browser.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18M3 12h18" /></svg>,
+    title: 'Folder or files',
+    desc: 'Send a whole folder, a zip, or a few separate files from the same flow.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h16M12 4v16" /><path d="m17 7 3 5-3 5M7 7l-3 5 3 5" /></svg>,
+    title: 'Share link ready',
+    desc: 'Copy the code, copy a redeem link, or share directly to common apps.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M4 12h10M4 17h7" /></svg>,
+    title: 'Download limits',
+    desc: 'Choose one-time use or allow a small number of downloads before cleanup.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h16M7 12h10M10 18h4" /></svg>,
+    title: 'Folder cleanup',
+    desc: 'Exclude dependencies, env files, builds, logs, and custom patterns before upload.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M2 12h20" /><path d="M5 5c4 3 10 3 14 0M5 19c4-3 10-3 14 0" /></svg>,
+    title: 'QR handoff',
+    desc: 'Show a QR code when moving a transfer from desktop to mobile is faster.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6v6H4zM14 4h6v6h-6z" /><path d="m10 10 4 4M14 10h-4v4" /></svg>,
+    title: 'Fast preview',
+    desc: 'Review selected files and total size before committing the upload.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+    title: 'End-to-end encrypted',
+    desc: 'Files are AES-256-GCM encrypted in your browser. The server never sees plaintext.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M13 2v7h7" /></svg>,
+    title: 'Up to 150 MB',
+    desc: 'Send large projects, datasets, or media files up to 150 MB per transfer.',
+  },
+  {
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6" /></svg>,
+    title: 'Live upload speed',
+    desc: 'Real-time MB/s indicator so you always know how fast your transfer is going.',
+  },
+];
+
+function FeaturesSection() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="features">
+      <button
+        className="features-toggle"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+      >
+        <span className="section-label">Why FolderDrop</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.25 }}
+          style={{ display: 'flex', alignItems: 'center' }}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="feat-grid"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto', transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, height: 0, transition: { duration: 0.22, ease: 'easeIn' } }}
+            style={{ overflow: 'hidden' }}
+          >
+            <motion.div
+              className="feat-grid"
+              initial="hidden"
+              animate="visible"
+              variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+            >
+              {FEATURES.map((f) => (
+                <motion.article
+                  key={f.title}
+                  className="feat-card"
+                  variants={{
+                    hidden: { opacity: 0, y: 16 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                  }}
+                >
+                  <span className="feat-icon">{f.icon}</span>
+                  <h3>{f.title}</h3>
+                  <p>{f.desc}</p>
+                </motion.article>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 }
 
@@ -97,9 +246,7 @@ export default function App() {
               <span className="dot" />
               No login required
             </motion.div>
-            <motion.h1 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.5 }}>
-              Share code.<br />Get a key.<br /><span>Done.</span>
-            </motion.h1>
+            <HeroHeading />
             <motion.p className="hero-sub" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.5 }}>
               No accounts. No unknown servers. A 6-digit code, valid for 10 minutes, that self-destructs on first use.
             </motion.p>
@@ -157,92 +304,7 @@ export default function App() {
             </TiltCard>
           </section>
 
-          <section className="features">
-            <div className="section-label">Why FolderDrop</div>
-            <div className="feat-grid">
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" /><path d="M12 8v4l3 3" />
-                  </svg>
-                </span>
-                <h3>10-minute expiry</h3>
-                <p>Codes self-destruct after 10 minutes. Nothing lingers on any server.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M17.94 11A6 6 0 0 0 6.06 11M1 1l22 22M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                  </svg>
-                </span>
-                <h3>Burn after download</h3>
-                <p>Each code works exactly once. First download destroys it permanently.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-                  </svg>
-                </span>
-                <h3>Zero accounts</h3>
-                <p>No sign-up, no tracking. Share from VS Code, receive in browser.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3v18M3 12h18" />
-                  </svg>
-                </span>
-                <h3>Folder or files</h3>
-                <p>Send a whole folder, a zip, or a few separate files from the same flow.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12h16M12 4v16" /><path d="m17 7 3 5-3 5M7 7l-3 5 3 5" />
-                  </svg>
-                </span>
-                <h3>Share link ready</h3>
-                <p>Copy the code, copy a redeem link, or share directly to common apps.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 7h16M4 12h10M4 17h7" />
-                  </svg>
-                </span>
-                <h3>Download limits</h3>
-                <p>Choose one-time use or allow a small number of downloads before cleanup.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 6h16M7 12h10M10 18h4" />
-                  </svg>
-                </span>
-                <h3>Folder cleanup</h3>
-                <p>Exclude dependencies, env files, builds, logs, and custom patterns before upload.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2v20M2 12h20" /><path d="M5 5c4 3 10 3 14 0M5 19c4-3 10-3 14 0" />
-                  </svg>
-                </span>
-                <h3>QR handoff</h3>
-                <p>Show a QR code when moving a transfer from desktop to mobile is faster.</p>
-              </article>
-              <article className="feat-card">
-                <span className="feat-icon">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 14h6v6H4zM14 4h6v6h-6z" /><path d="m10 10 4 4M14 10h-4v4" />
-                  </svg>
-                </span>
-                <h3>Fast preview</h3>
-                <p>Review selected files and total size before committing the upload.</p>
-              </article>
-            </div>
-          </section>
+          <FeaturesSection />
         </main>
       </div>
 

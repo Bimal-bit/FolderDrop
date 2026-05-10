@@ -563,6 +563,28 @@ button:disabled {
   margin: 0 auto;
 }
 
+.features-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 24px;
+  margin-bottom: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 220ms ease, color 220ms ease, background 220ms ease;
+}
+
+.features-toggle:hover {
+  border-color: rgba(0, 229, 204, 0.35);
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
 .section-label,
 .share-label {
   margin-bottom: 34px;

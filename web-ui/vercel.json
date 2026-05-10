@@ -7,6 +7,10 @@
     {
       "source": "/actuator/:path*",
       "destination": "https://folderdrop.onrender.com/actuator/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
