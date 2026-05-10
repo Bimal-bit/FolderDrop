@@ -1,0 +1,33 @@
+# Environment
+.env
+*.env.local
+
+# Java / Maven
+backend/target/
+
+# Node
+node_modules/
+vscode-extension/node_modules/
+web-ui/node_modules/
+
+# Build outputs
+vscode-extension/out/
+web-ui/dist/
+backend/src/main/resources/static/
+tools/
+.vscode-test/
+
+# VS Code extension package
+*.vsix
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

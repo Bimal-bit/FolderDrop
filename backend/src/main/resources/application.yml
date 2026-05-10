@@ -1,0 +1,41 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 55MB
+      max-request-size: 55MB
+
+folderdrop:
+  upstash:
+    url: ${UPSTASH_REDIS_REST_URL}
+    token: ${UPSTASH_REDIS_REST_TOKEN}
+  supabase:
+    project-url: ${SUPABASE_URL}
+    service-key: ${SUPABASE_SERVICE_ROLE_KEY}
+    bucket: ${SUPABASE_BUCKET}
+  otp:
+    ttl-seconds: 600
+  upload:
+    max-size-mb: 50
+  internal-token: ${INTERNAL_CLEANUP_TOKEN}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    dev.folderdrop: INFO

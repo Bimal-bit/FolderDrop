@@ -1,0 +1,29 @@
+{
+  "name": "folderdrop-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/three": "^0.164.0",
+    "framer-motion": "^11.2.10",
+    "gsap": "^3.12.5",
+    "jszip": "3.10.1",
+    "qrcode": "1.5.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "three": "^0.164.1"
+  },
+  "devDependencies": {
+    "@types/qrcode": "1.5.5",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.0",
+    "typescript": "5.4.5",
+    "vite": "5.2.11"
+  }
+}

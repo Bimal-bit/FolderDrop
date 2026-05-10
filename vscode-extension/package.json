@@ -1,0 +1,103 @@
+{
+  "name": "vscode-folder-drop",
+  "displayName": "FolderDrop",
+  "description": "Share any workspace folder via a 6-digit code. No login or cloud account required.",
+  "version": "1.0.0",
+  "publisher": "folderdrop",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "share",
+    "folder",
+    "zip",
+    "transfer",
+    "otp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/folderdrop/vscode-folder-drop"
+  },
+  "activationEvents": [
+    "onCommand:folderdrop.shareFolder",
+    "onCommand:folderdrop.downloadFromCode",
+    "onCommand:folderdrop.showQrCode"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "folderdrop.shareFolder",
+        "title": "Share via FolderDrop",
+        "category": "FolderDrop"
+      },
+      {
+        "command": "folderdrop.downloadFromCode",
+        "title": "Download from FolderDrop Code",
+        "category": "FolderDrop"
+      },
+      {
+        "command": "folderdrop.showQrCode",
+        "title": "Show FolderDrop QR Code",
+        "category": "FolderDrop"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "folderdrop.shareFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "FolderDrop",
+      "properties": {
+        "folderdrop.serverUrl": {
+          "type": "string",
+          "default": "https://your-folderdrop-app.onrender.com",
+          "description": "URL of your FolderDrop backend server.",
+          "order": 1
+        },
+        "folderdrop.maxFolderSizeMB": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "maximum": 500,
+          "description": "Maximum folder size in MB before upload is rejected.",
+          "order": 2
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./ --noEmit && node ./esbuild.js",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package --allow-missing-repository"
+  },
+  "dependencies": {
+    "archiver": "7.0.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/archiver": "6.0.2",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.12.12",
+    "@types/qrcode": "^1.5.6",
+    "@types/vscode": "1.85.0",
+    "@vscode/test-electron": "2.3.10",
+    "@vscode/vsce": "2.26.1",
+    "esbuild": "^0.28.0",
+    "mocha": "^10.4.0",
+    "typescript": "5.4.5"
+  }
+}
