@@ -134,20 +134,31 @@ public class StorageService {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new RuntimeException("Supabase sign URL returned: " + response.getStatusCode());
+                throw new RuntimeException("Supabase sign URL returned: " + response.getStatusCode()
+                        + " body=" + response.getBody());
             }
 
-            // Response: { "signedURL": "/storage/v1/object/sign/bucket/path?token=..." }
             JsonNode root = objectMapper.readTree(response.getBody());
-            String signedPath = root.get("signedURL").asText();
 
-            // signedPath is relative — prepend the project URL to make it absolute
-            String signedUrl = props.getSupabase().getProjectUrl() + signedPath;
-            log.info("Generated signed URL for path={}, valid=60s", path);
+            // Supabase returns either "signedURL" (older) or "signedUrl" (newer) — handle both
+            JsonNode signedNode = root.has("signedURL") ? root.get("signedURL") : root.get("signedUrl");
+            if (signedNode == null || signedNode.isNull()) {
+                throw new RuntimeException("Supabase sign URL response missing signedURL field. Body: "
+                        + response.getBody());
+            }
+
+            String signedPath = signedNode.asText();
+
+            // If already absolute (starts with http), use as-is; otherwise prepend project URL
+            String signedUrl = signedPath.startsWith("http")
+                    ? signedPath
+                    : props.getSupabase().getProjectUrl() + signedPath;
+
+            log.info("Generated signed URL for path={}, valid=300s", path);
             return signedUrl;
         } catch (Exception e) {
-            log.error("Supabase sign URL failed for path {}: {}", path, e.getMessage());
-            throw new RuntimeException("Failed to generate download link", e);
+            log.error("Supabase sign URL failed for path={}: {}", path, e.getMessage());
+            throw new RuntimeException("Failed to generate download link: " + e.getMessage(), e);
         }
     }
 

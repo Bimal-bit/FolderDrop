@@ -139,8 +139,8 @@ public class DownloadController {
 
         OtpEntry entry = entryOpt.get();
         String uuid = entry.uuid();
-        int remaining = otpService.decrementAndMaybeDelete(otp, entry);
 
+        // Generate signed URL BEFORE decrementing — so a Supabase failure doesn't burn the code
         String signedUrl;
         try {
             signedUrl = storageService.generatePresignedUrl(uuid);
@@ -149,6 +149,8 @@ public class DownloadController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Failed to generate download link."));
         }
+
+        int remaining = otpService.decrementAndMaybeDelete(otp, entry);
 
         if (remaining == 0) {
             cleanupService.deleteAsync(uuid);
