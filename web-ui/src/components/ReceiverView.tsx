@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useContext } from 'react';
 import { OtpInput } from './OtpInput';
 import { downloadAndDecrypt, isValidOtp } from '../api/download';
-import { getKeyFromHash } from '../api/crypto';
 import { AppContext } from '../context/AppContext';
 
 type ReceiverStatus = 'idle' | 'loading' | 'success' | 'error';
 
 interface ReceiverViewProps {
   onBack: () => void;
+  initialCode?: string;
+  initialKey?: string;
 }
 
 function ReceiveIcon() {
@@ -20,22 +21,17 @@ function ReceiveIcon() {
   );
 }
 
-export function ReceiverView({ onBack }: ReceiverViewProps) {
+export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: ReceiverViewProps) {
   const { addToast } = useContext(AppContext);
 
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState(initialCode);
   const [status, setStatus] = useState<ReceiverStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [maxDownloads, setMaxDownloads] = useState<number | null>(null);
-  const [decryptionKey, setDecryptionKey] = useState('');
+  const [decryptionKey, setDecryptionKey] = useState(initialKey);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code && isValidOtp(code)) setOtp(code);
-    setDecryptionKey(getKeyFromHash());
-  }, []);
+  // No longer need a useEffect to read from URL — values come in as props
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
