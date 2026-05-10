@@ -131,10 +131,25 @@ export function ReceiverView({ onBack }: ReceiverViewProps) {
           <span>Decryption key</span>
           <input
             value={decryptionKey}
-            onChange={(e) => setDecryptionKey(e.target.value)}
-            placeholder="Included automatically in secure links"
+            onChange={(e) => {
+              const val = e.target.value;
+              // Accept a full secure link and extract the key from the fragment
+              try {
+                const hashMatch = val.match(/#key=([^&\s]+)/);
+                if (hashMatch) {
+                  const extractedKey = decodeURIComponent(hashMatch[1]);
+                  setDecryptionKey(extractedKey);
+                  // Also extract OTP from the link if present
+                  const codeMatch = val.match(/[?&]code=(\d{6})/);
+                  if (codeMatch) setOtp(codeMatch[1]);
+                  return;
+                }
+              } catch { /* ignore parse errors */ }
+              setDecryptionKey(val);
+            }}
+            placeholder="Paste secure link or key here"
             disabled={isDisabled}
-            type="password"
+            type="text"
           />
         </label>
 
@@ -170,7 +185,7 @@ export function ReceiverView({ onBack }: ReceiverViewProps) {
         </div>
       )}
 
-      <p className="receiver-hint">Codes expire after 10 min - encrypted files are unreadable without the secure link key</p>
+      <p className="receiver-hint">Codes expire after 10 min — paste the full secure link to auto-fill both the code and key</p>
     </div>
   );
 }
