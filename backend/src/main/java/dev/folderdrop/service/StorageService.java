@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -178,15 +179,30 @@ public class StorageService {
     public byte[] download(String uuid) {
         String path = objectPath(uuid);
         String bucket = props.getSupabase().getBucket();
-        String url = storageBase() + "/object/" + bucket + "/" + path;
+        String authenticatedUrl = storageBase() + "/object/authenticated/" + bucket + "/" + path;
+        String legacyUrl = storageBase() + "/object/" + bucket + "/" + path;
 
-        HttpHeaders headers = authHeaders();
+        try {
+            return downloadFromUrl(authenticatedUrl);
+        } catch (Exception authenticatedError) {
+            log.warn("Authenticated Supabase download failed for uuid {}: {}. Trying legacy object route.",
+                    uuid, authenticatedError.getMessage());
+            try {
+                return downloadFromUrl(legacyUrl);
+            } catch (Exception legacyError) {
+                log.error("Supabase download failed for uuid {}: authenticated={}, legacy={}",
+                        uuid, authenticatedError.getMessage(), legacyError.getMessage());
+                throw new RuntimeException("Failed to download file from storage", legacyError);
+            }
+        }
+    }
 
+    private byte[] downloadFromUrl(String url) {
         try {
             ResponseEntity<byte[]> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
-                    new HttpEntity<Void>(headers),
+                    new HttpEntity<Void>(authHeaders()),
                     byte[].class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
@@ -194,9 +210,11 @@ public class StorageService {
             }
 
             return response.getBody();
+        } catch (HttpStatusCodeException e) {
+            throw new RuntimeException("Supabase download returned " + e.getStatusCode()
+                    + " body=" + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
-            log.error("Supabase download failed for uuid {}: {}", uuid, e.getMessage());
-            throw new RuntimeException("Failed to download file from storage", e);
+            throw new RuntimeException("Supabase download request failed: " + e.getMessage(), e);
         }
     }
 
