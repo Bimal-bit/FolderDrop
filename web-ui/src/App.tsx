@@ -32,28 +32,34 @@ function FolderIcon() {
 }
 
 function HeroHeading() {
-  const lines = ['Share code.', 'Get a key.', 'Done.'];
+  const lines = [
+    { text: 'Share code.', accent: false },
+    { text: 'Get a key.', accent: false },
+    { text: 'Done.', accent: true },
+  ];
   return (
     <motion.h1
+      className="hero-title"
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.2, delayChildren: 0.08 } } }}
+      variants={{ visible: { transition: { staggerChildren: 0.16, delayChildren: 0.08 } } }}
     >
-      {lines.map((line, i) => (
+      {lines.map((line) => (
         <motion.span
-          key={i}
-          style={{ display: 'block' }}
+          key={line.text}
+          className={line.accent ? 'hero-line hero-accent' : 'hero-line'}
           variants={{
-            hidden: { opacity: 0, y: 20, filter: 'blur(8px)' },
+            hidden: { opacity: 0, y: 28, scale: 0.96, filter: 'blur(10px)' },
             visible: {
-              opacity: 1, y: 0, filter: 'blur(0px)',
-              transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              filter: 'blur(0px)',
+              transition: { duration: 0.68, ease: [0.22, 1, 0.36, 1] },
             },
           }}
         >
-          {i === lines.length - 1
-            ? <span className="hero-accent">{line}</span>
-            : line}
+          {line.text}
         </motion.span>
       ))}
     </motion.h1>

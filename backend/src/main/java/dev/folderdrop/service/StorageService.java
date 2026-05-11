@@ -147,12 +147,7 @@ public class StorageService {
                         + response.getBody());
             }
 
-            String signedPath = signedNode.asText();
-
-            // If already absolute (starts with http), use as-is; otherwise prepend project URL
-            String signedUrl = signedPath.startsWith("http")
-                    ? signedPath
-                    : props.getSupabase().getProjectUrl() + signedPath;
+            String signedUrl = normalizeSignedUrl(signedNode.asText());
 
             log.info("Generated signed URL for path={}, valid=300s", path);
             return signedUrl;
@@ -160,6 +155,24 @@ public class StorageService {
             log.error("Supabase sign URL failed for path={}: {}", path, e.getMessage());
             throw new RuntimeException("Failed to generate download link: " + e.getMessage(), e);
         }
+    }
+
+    private String normalizeSignedUrl(String signedPath) {
+        if (signedPath.startsWith("http")) {
+            return signedPath;
+        }
+
+        String projectUrl = props.getSupabase().getProjectUrl();
+        if (signedPath.startsWith("/storage/v1/")) {
+            return projectUrl + signedPath;
+        }
+
+        if (signedPath.startsWith("/object/")) {
+            return storageBase() + signedPath;
+        }
+
+        String normalizedPath = signedPath.startsWith("/") ? signedPath : "/" + signedPath;
+        return storageBase() + normalizedPath;
     }
 
     public byte[] download(String uuid) {
