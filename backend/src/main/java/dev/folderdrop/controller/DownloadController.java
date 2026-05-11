@@ -5,7 +5,9 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,13 +52,6 @@ public class DownloadController {
         this.props = props;
     }
 
-    /**
-     * GET /api/download/{otp}
-     *
-     * Decrements the remaining download count.
-     * Deletes the Redis key and schedules storage cleanup when count reaches 0.
-     * Issues a 302 redirect to the signed storage URL.
-     */
     @GetMapping("/download/{otp}")
     @Operation(summary = "Redeem a 6-digit OTP and download the shared file")
     public ResponseEntity<?> download(
@@ -86,7 +81,6 @@ public class DownloadController {
         OtpEntry entry = entryOpt.get();
         String uuid = entry.uuid();
 
-        // Generate signed URL before decrementing so storage failures do not burn the code.
         String signedUrl;
         try {
             signedUrl = storageService.generatePresignedUrl(uuid);
@@ -100,7 +94,6 @@ public class DownloadController {
 
         log.info("Download: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
 
-        // Schedule async storage cleanup only when all downloads are exhausted
         if (remaining == 0) {
             cleanupService.deleteAsync(uuid);
         }
@@ -111,7 +104,7 @@ public class DownloadController {
     }
 
     @GetMapping("/download/{otp}/encrypted")
-    @Operation(summary = "Redeem a 6-digit OTP and return signed URL for client-side decryption")
+    @Operation(summary = "Redeem a 6-digit OTP and return encrypted bytes for client-side decryption")
     public ResponseEntity<?> downloadEncrypted(
             @PathVariable String otp,
             HttpServletRequest request) {
@@ -139,14 +132,13 @@ public class DownloadController {
         OtpEntry entry = entryOpt.get();
         String uuid = entry.uuid();
 
-        // Generate signed URL BEFORE decrementing — so a Supabase failure doesn't burn the code
-        String signedUrl;
+        byte[] encryptedBytes;
         try {
-            signedUrl = storageService.generatePresignedUrl(uuid);
+            encryptedBytes = storageService.download(uuid);
         } catch (Exception e) {
-            log.error("Failed to generate signed URL for uuid={}: {}", uuid, e.getMessage());
+            log.error("Failed to fetch encrypted file for uuid={}: {}", uuid, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Failed to generate download link."));
+                    .body(new ErrorResponse("Failed to download encrypted file."));
         }
 
         int remaining = otpService.decrementAndMaybeDelete(otp, entry);
@@ -157,17 +149,12 @@ public class DownloadController {
 
         log.info("DownloadEncrypted: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
 
-        // Return the signed URL as JSON — browser fetches directly from Supabase
-        // This avoids buffering large files through the backend
-        return ResponseEntity.ok(new DownloadUrlResponse(signedUrl));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(encryptedBytes);
     }
 
-    /**
-     * GET /api/info/{otp}
-     *
-     * Returns metadata about an OTP without consuming a download.
-     * Used by the receiver UI to show remaining downloads before redeeming.
-     */
     @GetMapping("/info/{otp}")
     @Operation(summary = "Get OTP metadata (remaining downloads) without consuming it")
     public ResponseEntity<?> info(@PathVariable String otp) {
@@ -217,5 +204,4 @@ public class DownloadController {
 
     public record ErrorResponse(String error) {}
     public record InfoResponse(int maxDownloads, int remaining) {}
-    public record DownloadUrlResponse(String url) {}
 }

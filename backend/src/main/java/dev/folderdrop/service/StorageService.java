@@ -176,13 +176,17 @@ public class StorageService {
     }
 
     public byte[] download(String uuid) {
-        String signedUrl = generatePresignedUrl(uuid);
+        String path = objectPath(uuid);
+        String bucket = props.getSupabase().getBucket();
+        String url = storageBase() + "/object/" + bucket + "/" + path;
+
+        HttpHeaders headers = authHeaders();
 
         try {
             ResponseEntity<byte[]> response = restTemplate.exchange(
-                    signedUrl,
+                    url,
                     HttpMethod.GET,
-                    HttpEntity.EMPTY,
+                    new HttpEntity<Void>(headers),
                     byte[].class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {

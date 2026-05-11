@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -73,6 +74,25 @@ class DownloadControllerTest {
                         "https://mock.supabase.co/storage/v1/object/sign/mock-bucket/uploads/" + uuid + ".zip?token=abc"));
 
         // Verify burn-after-download: decrementAndMaybeDelete was called
+        verify(otpService).decrementAndMaybeDelete(eq("123456"), any(OtpEntry.class));
+    }
+
+    @Test
+    void validOtpEncrypted_returnsEncryptedBytes() throws Exception {
+        when(rateLimiterService.tryAcquireDownload(anyString())).thenReturn(true);
+
+        String uuid = "550e8400-e29b-41d4-a716-446655440000";
+        byte[] encryptedBytes = new byte[] { 1, 2, 3, 4 };
+        OtpEntry entry = new OtpEntry(uuid, 1, 1);
+        when(otpService.lookup("123456")).thenReturn(Optional.of(entry));
+        when(storageService.download(uuid)).thenReturn(encryptedBytes);
+        when(otpService.decrementAndMaybeDelete("123456", entry)).thenReturn(0);
+        doNothing().when(cleanupService).deleteAsync(uuid);
+
+        mockMvc.perform(get("/api/download/123456/encrypted"))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(encryptedBytes));
+
         verify(otpService).decrementAndMaybeDelete(eq("123456"), any(OtpEntry.class));
     }
 

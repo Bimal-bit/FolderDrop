@@ -154,6 +154,11 @@ button:disabled {
   45% { text-shadow: 0 0 34px rgba(0, 229, 204, 0.42); transform: translateZ(0) scale(1.035); }
 }
 
+@keyframes hero-line-pop {
+  0%, 100% { text-shadow: 0 0 0 rgba(240, 244, 255, 0); transform: translateZ(0) scale(1); }
+  45% { text-shadow: 0 0 28px rgba(240, 244, 255, 0.22); transform: translateZ(0) scale(1.025); }
+}
+
 .particle-canvas {
   position: fixed;
   inset: 0;
@@ -369,11 +374,17 @@ button:disabled {
 .hero-line {
   display: block;
   color: var(--text-primary);
+  animation: hero-line-pop 2.4s ease-in-out 1.05s infinite;
+}
+
+.hero-line:nth-child(2) {
+  animation-delay: 1.2s;
 }
 
 .hero-accent {
   color: var(--accent);
-  animation: hero-accent-pop 2.4s ease-in-out 1.05s infinite;
+  animation-name: hero-accent-pop;
+  animation-delay: 1.35s;
 }
 
 .hero-sub {
