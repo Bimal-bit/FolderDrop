@@ -1,6 +1,8 @@
 package dev.folderdrop.service;
 
+import java.net.URLDecoder;
 import java.security.SecureRandom;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -164,7 +166,8 @@ public class OtpService {
         }
 
         public static OtpEntry parse(String raw) {
-            String[] parts = raw.split("\\|");
+            String decoded = URLDecoder.decode(raw, StandardCharsets.UTF_8);
+            String[] parts = decoded.split("\\|");
             if (parts.length == 1) return new OtpEntry(parts[0], 1, 1, null);
             if (parts.length == 3) {
                 return new OtpEntry(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), null);

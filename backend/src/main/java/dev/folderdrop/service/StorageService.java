@@ -57,11 +57,16 @@ public class StorageService {
 
     private HttpHeaders authHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(props.getSupabase().getServiceKey());
-        // Supabase's newer "sb_secret_..." key format requires the apikey header
-        // in addition to the Authorization Bearer header. The legacy eyJ... JWT
-        // format works with Bearer alone, but adding apikey is harmless for both.
-        headers.set("apikey", props.getSupabase().getServiceKey());
+        String serviceKey = props.getSupabase().getServiceKey();
+        headers.set("apikey", serviceKey);
+
+        // Legacy service_role keys are JWTs and are accepted in Authorization.
+        // New sb_secret_* keys are opaque API keys; sending them as Bearer tokens
+        // can make Storage reject private object reads with 400/401.
+        if (!serviceKey.startsWith("sb_secret_")) {
+            headers.setBearerAuth(serviceKey);
+        }
+
         return headers;
     }
 
