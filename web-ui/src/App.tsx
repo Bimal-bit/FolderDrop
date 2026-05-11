@@ -7,7 +7,6 @@ import { AnimatedBackground } from './components/AnimatedBackground';
 import { TiltCard } from './components/TiltCard';
 import { AppContext } from './context/AppContext';
 import { useToast } from './hooks/useToast';
-import { getKeyFromHash } from './api/crypto';
 
 type Mode = 'home' | 'send' | 'receive';
 type Theme = 'dark' | 'light';
@@ -197,10 +196,8 @@ function FeaturesSection() {
 }
 
 // Capture URL params immediately at load time before any React renders.
-// The hash fragment (#key=...) must be read before anything can clear it.
 const _initialParams = new URLSearchParams(window.location.search);
 const _initialCode = _initialParams.get('code') ?? '';
-const _initialKey = getKeyFromHash();
 const _initialMode: Mode =
   _initialCode || window.location.pathname.includes('redeem') ? 'receive' : 'home';
 
@@ -304,7 +301,7 @@ export default function App() {
 
                   {mode === 'receive' && (
                     <motion.div key="receive" variants={pageVariants} initial="initial" animate="animate" exit="exit">
-                      <ReceiverView onBack={showHome} initialCode={_initialCode} initialKey={_initialKey} />
+                      <ReceiverView onBack={showHome} initialCode={_initialCode} />
                     </motion.div>
                   )}
                 </AnimatePresence>

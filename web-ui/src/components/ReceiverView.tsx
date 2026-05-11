@@ -8,7 +8,6 @@ type ReceiverStatus = 'idle' | 'loading' | 'success' | 'error';
 interface ReceiverViewProps {
   onBack: () => void;
   initialCode?: string;
-  initialKey?: string;
 }
 
 function ReceiveIcon() {
@@ -21,7 +20,7 @@ function ReceiveIcon() {
   );
 }
 
-export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: ReceiverViewProps) {
+export function ReceiverView({ onBack, initialCode = '' }: ReceiverViewProps) {
   const { addToast } = useContext(AppContext);
 
   const [otp, setOtp] = useState(initialCode);
@@ -29,9 +28,6 @@ export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: Rece
   const [errorMsg, setErrorMsg] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [maxDownloads, setMaxDownloads] = useState<number | null>(null);
-  const [decryptionKey, setDecryptionKey] = useState(initialKey);
-
-  // No longer need a useEffect to read from URL — values come in as props
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -77,16 +73,10 @@ export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: Rece
     const trimmed = otp.replace(/\s/g, '');
     if (!isValidOtp(trimmed)) return;
 
-    if (!decryptionKey.trim()) {
-      setStatus('error');
-      setErrorMsg('Missing decryption key. Use the secure FolderDrop link or ask the sender for the key.');
-      return;
-    }
-
     setStatus('loading');
     setErrorMsg('');
     try {
-      await downloadAndDecrypt(trimmed, decryptionKey.trim());
+      await downloadAndDecrypt(trimmed);
       setStatus('success');
       addToast('Downloaded and decrypted.', 'success');
     } catch (err) {
@@ -95,7 +85,7 @@ export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: Rece
       setStatus('error');
       addToast(message, 'error');
     }
-  }, [otp, decryptionKey, addToast]);
+  }, [otp, addToast]);
 
   const handleOtpChange = useCallback((value: string) => {
     setOtp(value);
@@ -123,32 +113,6 @@ export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: Rece
       <form onSubmit={handleSubmit} noValidate className="receiver-form">
         <OtpInput value={otp} onChange={handleOtpChange} disabled={isDisabled} />
 
-        <label className="custom-exclude" htmlFor="decryption-key-input">
-          <span>Decryption key</span>
-          <input
-            id="decryption-key-input"
-            name="decryptionKey"
-            value={decryptionKey}
-            onChange={(e) => {
-              const val = e.target.value;
-              try {
-                const hashMatch = val.match(/#key=([^&\s]+)/);
-                if (hashMatch) {
-                  const extractedKey = decodeURIComponent(hashMatch[1]);
-                  setDecryptionKey(extractedKey);
-                  const codeMatch = val.match(/[?&]code=(\d{6})/);
-                  if (codeMatch) setOtp(codeMatch[1]);
-                  return;
-                }
-              } catch { /* ignore parse errors */ }
-              setDecryptionKey(val);
-            }}
-            placeholder="Paste secure link or key here"
-            disabled={isDisabled}
-            type="text"
-          />
-        </label>
-
         {isComplete && remaining !== null && status === 'idle' && (
           <div className="download-info-badge">
             <span>{remaining} of {maxDownloads} download{maxDownloads !== 1 ? 's' : ''} remaining</span>
@@ -157,15 +121,15 @@ export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: Rece
 
         <button type="submit" className="download-btn" disabled={!isComplete || isDisabled}>
           {status === 'loading'
-            ? <><span className="btn-spinner" aria-hidden="true" /> Decrypting...</>
-            : 'Download & Decrypt'}
+            ? <><span className="btn-spinner" aria-hidden="true" /> Downloading...</>
+            : 'Download'}
         </button>
       </form>
 
       {status === 'loading' && (
         <div className="status-message status-loading" role="status" aria-live="polite">
           <span className="spinner" aria-hidden="true" />
-          <span>Downloading and decrypting...</span>
+          <span>Downloading...</span>
         </div>
       )}
       {status === 'success' && (
@@ -181,7 +145,7 @@ export function ReceiverView({ onBack, initialCode = '', initialKey = '' }: Rece
         </div>
       )}
 
-      <p className="receiver-hint">Codes expire after 10 min — paste the full secure link to auto-fill both the code and key</p>
+      <p className="receiver-hint">Codes expire after 10 min</p>
     </div>
   );
 }

@@ -1,9 +1,14 @@
 import { decryptBlob } from './crypto';
 
-export async function downloadAndDecrypt(otp: string, key: string): Promise<void> {
+export async function downloadAndDecrypt(otp: string): Promise<void> {
   const redeemRes = await fetch(`/api/download/${encodeURIComponent(otp)}/encrypted`);
   if (!redeemRes.ok) {
     throw new Error(await readError(redeemRes));
+  }
+
+  const key = redeemRes.headers.get('X-FolderDrop-Key');
+  if (!key) {
+    throw new Error('This code was created before code-only downloads were enabled. Ask the sender to share it again.');
   }
 
   const encrypted = await redeemRes.blob();

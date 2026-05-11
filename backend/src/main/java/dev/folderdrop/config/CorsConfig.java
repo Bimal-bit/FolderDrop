@@ -28,6 +28,7 @@ public class CorsConfig {
         config.addAllowedMethod("DELETE");
         config.addAllowedMethod("OPTIONS");
         config.addAllowedHeader("*");
+        config.addExposedHeader("X-FolderDrop-Key");
         config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 

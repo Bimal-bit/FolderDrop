@@ -55,6 +55,7 @@ public class UploadController {
     @Operation(summary = "Upload a file/folder ZIP and receive a 6-digit OTP")
     public ResponseEntity<?> upload(
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "key", required = false) String decryptionKey,
             @RequestParam(value = "maxDownloads", defaultValue = "1") int maxDownloads,
             HttpServletRequest request) {
 
@@ -91,7 +92,7 @@ public class UploadController {
                 ? file.getOriginalFilename().replaceAll("\\.zip$", "")
                 : "file";
 
-        String otp = otpService.generateAndStore(uuid, clampedMax);
+        String otp = otpService.generateAndStore(uuid, clampedMax, decryptionKey);
         storageService.upload(uuid, file, otp, originalName);
 
         log.info("Upload: uuid={}, otp={}, maxDownloads={}, ip={}, size={}B",

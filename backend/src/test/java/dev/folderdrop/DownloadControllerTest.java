@@ -57,23 +57,21 @@ class DownloadControllerTest {
     private RateLimiterService rateLimiterService;
 
     @Test
-    void validOtp_returns302Redirect() throws Exception {
+    void validOtp_returnsEncryptedBytes() throws Exception {
         when(rateLimiterService.tryAcquireDownload(anyString())).thenReturn(true);
 
         String uuid = "550e8400-e29b-41d4-a716-446655440000";
+        byte[] encryptedBytes = new byte[] { 5, 6, 7, 8 };
         OtpEntry entry = new OtpEntry(uuid, 1, 1);
         when(otpService.lookup("123456")).thenReturn(Optional.of(entry));
         when(otpService.decrementAndMaybeDelete("123456", entry)).thenReturn(0);
-        when(storageService.generatePresignedUrl(uuid))
-                .thenReturn("https://mock.supabase.co/storage/v1/object/sign/mock-bucket/uploads/" + uuid + ".zip?token=abc");
+        when(storageService.download(uuid)).thenReturn(encryptedBytes);
         doNothing().when(cleanupService).deleteAsync(uuid);
 
         mockMvc.perform(get("/api/download/123456"))
-                .andExpect(status().isFound())
-                .andExpect(header().string("Location",
-                        "https://mock.supabase.co/storage/v1/object/sign/mock-bucket/uploads/" + uuid + ".zip?token=abc"));
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(encryptedBytes));
 
-        // Verify burn-after-download: decrementAndMaybeDelete was called
         verify(otpService).decrementAndMaybeDelete(eq("123456"), any(OtpEntry.class));
     }
 
@@ -83,7 +81,7 @@ class DownloadControllerTest {
 
         String uuid = "550e8400-e29b-41d4-a716-446655440000";
         byte[] encryptedBytes = new byte[] { 1, 2, 3, 4 };
-        OtpEntry entry = new OtpEntry(uuid, 1, 1);
+        OtpEntry entry = new OtpEntry(uuid, 1, 1, "test-key");
         when(otpService.lookup("123456")).thenReturn(Optional.of(entry));
         when(storageService.download(uuid)).thenReturn(encryptedBytes);
         when(otpService.decrementAndMaybeDelete("123456", entry)).thenReturn(0);
@@ -91,6 +89,7 @@ class DownloadControllerTest {
 
         mockMvc.perform(get("/api/download/123456/encrypted"))
                 .andExpect(status().isOk())
+                .andExpect(header().string("X-FolderDrop-Key", "test-key"))
                 .andExpect(content().bytes(encryptedBytes));
 
         verify(otpService).decrementAndMaybeDelete(eq("123456"), any(OtpEntry.class));

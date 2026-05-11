@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, DragEvent, useContext } from 'react';
 import JSZip from 'jszip';
 import { uploadZip, pingBackend, UploadProgress } from '../api/upload';
-import { buildSecureRedeemUrl, encryptBlob } from '../api/crypto';
+import { encryptBlob } from '../api/crypto';
 import { QrCode } from './QrCode';
 import { ShareButtons } from './ShareButtons';
 import { FilePreview } from './FilePreview';
@@ -62,7 +62,6 @@ export function SenderView({ onBack }: SenderViewProps) {
   const [progressLabel, setProgressLabel] = useState('');
   const [uploadSpeed, setUploadSpeed] = useState('');
   const [otp, setOtp] = useState('');
-  const [decryptionKey, setDecryptionKey] = useState('');
   const [expiresIn, setExpiresIn] = useState(600);
   const [errorMsg, setErrorMsg] = useState('');
   const [copied, setCopied] = useState(false);
@@ -84,7 +83,7 @@ export function SenderView({ onBack }: SenderViewProps) {
   const uploadedBytesRef = useRef<number>(0);
 
   const { label: countdownLabel, expired } = useCountdown(expiresIn, status === 'done');
-  const redeemUrl = otp && decryptionKey ? buildSecureRedeemUrl(window.location.origin, otp, decryptionKey) : '';
+  const redeemUrl = otp ? `${window.location.origin.replace(/\/$/, '')}/redeem?code=${encodeURIComponent(otp)}` : '';
 
   const shouldExclude = useCallback((file: FolderFile) => {
     if (fileMode !== 'folder') return false;
@@ -216,20 +215,19 @@ export function SenderView({ onBack }: SenderViewProps) {
           const uploaded = (p.percent / 100) * encrypted.encrypted.size;
           if (elapsed > 0.5) setUploadSpeed(formatSpeed(uploaded / elapsed));
         },
-        { maxDownloads }
+        { maxDownloads, decryptionKey: encrypted.key }
       );
 
       setOtp(result.otp);
-      setDecryptionKey(encrypted.key);
       setExpiresIn(result.expiresIn);
       setProgress(100);
       setStatus('done');
 
       fireConfetti();
-      addToast('Encrypted link copied to clipboard.', 'success');
+      addToast('Code link copied to clipboard.', 'success');
 
       try {
-        await navigator.clipboard.writeText(buildSecureRedeemUrl(window.location.origin, result.otp, encrypted.key));
+        await navigator.clipboard.writeText(`${window.location.origin.replace(/\/$/, '')}/redeem?code=${encodeURIComponent(result.otp)}`);
       } catch { /* ignore */ }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -255,7 +253,6 @@ export function SenderView({ onBack }: SenderViewProps) {
     setStatus('idle');
     setProgress(0);
     setOtp('');
-    setDecryptionKey('');
     setErrorMsg('');
     setCopied(false);
     setShowQr(false);
@@ -420,7 +417,7 @@ export function SenderView({ onBack }: SenderViewProps) {
           <div className="otp-result-top">
             <span className="otp-result-icon">OK</span>
             <div>
-              <p className="otp-result-label">Share the secure link with the recipient</p>
+              <p className="otp-result-label">Share this code with the recipient</p>
               <p className="otp-result-meta">
                 {maxDownloads === 1 ? 'One-time use' : `Up to ${maxDownloads} downloads`}
                 {' - '}
@@ -440,7 +437,7 @@ export function SenderView({ onBack }: SenderViewProps) {
               {copied ? 'Copied' : 'Copy Code'}
             </button>
             <button className="link-btn" onClick={handleCopyLink} disabled={expired}>
-              {linkCopied ? 'Copied' : 'Copy Secure Link'}
+              {linkCopied ? 'Copied' : 'Copy Code Link'}
             </button>
           </div>
 

@@ -11,6 +11,7 @@ export interface UploadProgress {
 
 export interface UploadOptions {
   maxDownloads?: number;
+  decryptionKey?: string;
 }
 
 /**
@@ -38,6 +39,9 @@ export async function uploadZip(
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append('file', encryptedBlob, fileName.replace(/\.zip$/i, '') + '.fdenc');
+    if (options.decryptionKey) {
+      formData.append('key', options.decryptionKey);
+    }
     if (options.maxDownloads && options.maxDownloads > 1) {
       formData.append('maxDownloads', String(options.maxDownloads));
     }

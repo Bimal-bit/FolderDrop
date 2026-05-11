@@ -1,6 +1,5 @@
 package dev.folderdrop.controller;
 
-import java.net.URI;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -81,13 +80,13 @@ public class DownloadController {
         OtpEntry entry = entryOpt.get();
         String uuid = entry.uuid();
 
-        String signedUrl;
+        byte[] encryptedBytes;
         try {
-            signedUrl = storageService.generatePresignedUrl(uuid);
+            encryptedBytes = storageService.download(uuid);
         } catch (Exception e) {
-            log.error("Failed to generate signed URL for uuid={}: {}", uuid, e.getMessage());
+            log.error("Failed to fetch file for uuid={}: {}", uuid, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Failed to generate download link."));
+                    .body(new ErrorResponse("Failed to download file."));
         }
 
         int remaining = otpService.decrementAndMaybeDelete(otp, entry);
@@ -98,9 +97,10 @@ public class DownloadController {
             cleanupService.deleteAsync(uuid);
         }
 
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(signedUrl))
-                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(encryptedBytes);
     }
 
     @GetMapping("/download/{otp}/encrypted")
@@ -149,10 +149,15 @@ public class DownloadController {
 
         log.info("DownloadEncrypted: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
 
-        return ResponseEntity.ok()
+        ResponseEntity.BodyBuilder response = ResponseEntity.ok()
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(encryptedBytes);
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+
+        if (entry.decryptionKey() != null && !entry.decryptionKey().isBlank()) {
+            response.header("X-FolderDrop-Key", entry.decryptionKey());
+        }
+
+        return response.body(encryptedBytes);
     }
 
     @GetMapping("/info/{otp}")

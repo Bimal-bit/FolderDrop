@@ -48,7 +48,7 @@ class UploadControllerTest {
     @Test
     void uploadValidZip_returns200WithOtp() throws Exception {
         when(rateLimiterService.tryAcquireUpload(anyString())).thenReturn(true);
-        when(otpService.generateAndStore(anyString(), org.mockito.ArgumentMatchers.anyInt())).thenReturn("123456");
+        when(otpService.generateAndStore(anyString(), org.mockito.ArgumentMatchers.anyInt(), any())).thenReturn("123456");
         doNothing().when(storageService).upload(anyString(), any(), anyString(), anyString());
 
         MockMultipartFile file = new MockMultipartFile(
