@@ -28,6 +28,8 @@ export function ReceiverView({ onBack, initialCode = '' }: ReceiverViewProps) {
   const [errorMsg, setErrorMsg] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [maxDownloads, setMaxDownloads] = useState<number | null>(null);
+  const [dlProgress, setDlProgress] = useState(0);
+  const [dlLabel, setDlLabel] = useState('Downloading...');
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -40,7 +42,7 @@ export function ReceiverView({ onBack, initialCode = '' }: ReceiverViewProps) {
             setOtp(digits);
             addToast('Code pasted from clipboard', 'info', 2000);
           }
-        }).catch(() => { /* clipboard permission denied */ });
+        }).catch(() => {});
       }
     };
     window.addEventListener('keydown', handler);
@@ -63,7 +65,7 @@ export function ReceiverView({ onBack, initialCode = '' }: ReceiverViewProps) {
         setRemaining(data.remaining);
         setMaxDownloads(data.maxDownloads);
       })
-      .catch(() => { /* info is optional */ });
+      .catch(() => {});
 
     return () => { cancelled = true; };
   }, [otp]);
@@ -74,9 +76,21 @@ export function ReceiverView({ onBack, initialCode = '' }: ReceiverViewProps) {
     if (!isValidOtp(trimmed)) return;
 
     setStatus('loading');
+    setDlProgress(0);
+    setDlLabel('Connecting...');
     setErrorMsg('');
+
     try {
-      await downloadAndDecrypt(trimmed);
+      await downloadAndDecrypt(trimmed, (p) => {
+        if (p.phase === 'fetching') {
+          setDlLabel(p.percent < 100 ? `Downloading... ${p.percent}%` : 'Decrypting...');
+          setDlProgress(Math.round(p.percent * 0.9)); // 0–90% for download
+        } else {
+          setDlLabel('Decrypting...');
+          setDlProgress(90 + Math.round(p.percent * 0.1)); // 90–100% for decrypt
+        }
+      });
+      setDlProgress(100);
       setStatus('success');
       addToast('Downloaded and decrypted.', 'success');
     } catch (err) {
@@ -121,21 +135,28 @@ export function ReceiverView({ onBack, initialCode = '' }: ReceiverViewProps) {
 
         <button type="submit" className="download-btn" disabled={!isComplete || isDisabled}>
           {status === 'loading'
-            ? <><span className="btn-spinner" aria-hidden="true" /> Downloading...</>
-            : 'Download'}
+            ? <><span className="btn-spinner" aria-hidden="true" /> {dlLabel}</>
+            : 'Download & Decrypt'}
         </button>
       </form>
 
+      {/* Download progress bar */}
       {status === 'loading' && (
-        <div className="status-message status-loading" role="status" aria-live="polite">
-          <span className="spinner" aria-hidden="true" />
-          <span>Downloading...</span>
+        <div className="progress-block">
+          <div className="progress-label-row">
+            <span>{dlLabel}</span>
+            <span>{dlProgress}%</span>
+          </div>
+          <div className="progress-bar-track">
+            <div className="progress-bar-fill" style={{ width: `${dlProgress}%` }} />
+          </div>
         </div>
       )}
+
       {status === 'success' && (
         <div className="status-message status-success" role="status" aria-live="polite">
           <span className="status-icon">OK</span>
-          <span>Download decrypted.</span>
+          <span>Download complete. Check your downloads folder.</span>
         </div>
       )}
       {status === 'error' && (

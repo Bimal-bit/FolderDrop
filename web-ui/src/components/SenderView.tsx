@@ -208,11 +208,17 @@ export function SenderView({ onBack }: SenderViewProps) {
         encrypted.encrypted,
         uploadName,
         (p: UploadProgress) => {
-          setProgress(50 + Math.round(p.percent / 2));
-          setProgressLabel(`Uploading... ${p.percent}%`);
-          const elapsed = (Date.now() - uploadStartRef.current) / 1000;
-          const uploaded = (p.percent / 100) * encrypted.encrypted.size;
-          if (elapsed > 0.5) setUploadSpeed(formatSpeed(uploaded / elapsed));
+          const displayPct = 50 + Math.round(p.percent / 2);
+          setProgress(displayPct);
+          if (p.percent === 100) {
+            setProgressLabel('Saving to cloud...');
+            setUploadSpeed('');
+          } else {
+            setProgressLabel(`Uploading... ${p.percent}%`);
+            const elapsed = (Date.now() - uploadStartRef.current) / 1000;
+            const uploaded = (p.percent / 100) * encrypted.encrypted.size;
+            if (elapsed > 0.5) setUploadSpeed(formatSpeed(uploaded / elapsed));
+          }
         },
         { maxDownloads, decryptionKey: encrypted.key }
       );

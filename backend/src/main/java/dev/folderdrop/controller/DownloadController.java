@@ -1,12 +1,11 @@
 package dev.folderdrop.controller;
 
+import java.net.URI;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,8 +50,12 @@ public class DownloadController {
         this.props = props;
     }
 
+    /**
+     * GET /api/download/{otp}
+     * Legacy redirect endpoint — issues a 302 to the Supabase signed URL.
+     */
     @GetMapping("/download/{otp}")
-    @Operation(summary = "Redeem a 6-digit OTP and download the shared file")
+    @Operation(summary = "Redeem a 6-digit OTP and redirect to the file")
     public ResponseEntity<?> download(
             @PathVariable String otp,
             HttpServletRequest request) {
@@ -60,7 +63,6 @@ public class DownloadController {
         String clientIp = getClientIp(request);
 
         if (!rateLimiterService.tryAcquireDownload(clientIp)) {
-            log.warn("Rate limit exceeded for download from IP: {}", clientIp);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ErrorResponse("Too many attempts. Please wait before trying again."));
         }
@@ -72,7 +74,6 @@ public class DownloadController {
 
         Optional<OtpEntry> entryOpt = otpService.lookup(otp);
         if (entryOpt.isEmpty()) {
-            log.info("OTP not found or expired: otp={}, ip={}", otp, clientIp);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ErrorResponse("Invalid or expired code."));
         }
@@ -80,31 +81,35 @@ public class DownloadController {
         OtpEntry entry = entryOpt.get();
         String uuid = entry.uuid();
 
-        byte[] encryptedBytes;
+        // Generate signed URL before decrementing — failure won't burn the code
+        String signedUrl;
         try {
-            encryptedBytes = storageService.download(uuid);
+            signedUrl = storageService.generatePresignedUrl(uuid);
         } catch (Exception e) {
-            log.error("Failed to fetch file for uuid={}: {}", uuid, e.getMessage());
+            log.error("Failed to generate signed URL for uuid={}: {}", uuid, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Failed to download file."));
+                    .body(new ErrorResponse("Failed to generate download link."));
         }
 
         int remaining = otpService.decrementAndMaybeDelete(otp, entry);
+        if (remaining == 0) cleanupService.deleteAsync(uuid);
 
-        log.info("Download: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
-
-        if (remaining == 0) {
-            cleanupService.deleteAsync(uuid);
-        }
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "no-store")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(encryptedBytes);
+        log.info("Download redirect: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(signedUrl)).build();
     }
 
+    /**
+     * GET /api/download/{otp}/encrypted
+     *
+     * Returns { "url": "<supabase-signed-url>", "key": "<decryption-key>" }
+     * The browser fetches the file directly from Supabase — the backend never
+     * buffers the file bytes, so large files don't OOM and there's no double transfer.
+     *
+     * Signed URL is generated BEFORE decrementing the OTP so a Supabase failure
+     * doesn't burn the code.
+     */
     @GetMapping("/download/{otp}/encrypted")
-    @Operation(summary = "Redeem a 6-digit OTP and return encrypted bytes for client-side decryption")
+    @Operation(summary = "Redeem OTP — returns signed URL + decryption key for client-side download")
     public ResponseEntity<?> downloadEncrypted(
             @PathVariable String otp,
             HttpServletRequest request) {
@@ -132,36 +137,27 @@ public class DownloadController {
         OtpEntry entry = entryOpt.get();
         String uuid = entry.uuid();
 
-        byte[] encryptedBytes;
+        // Generate signed URL BEFORE decrementing — Supabase failure won't burn the code
+        String signedUrl;
         try {
-            encryptedBytes = storageService.download(uuid);
+            signedUrl = storageService.generatePresignedUrl(uuid);
         } catch (Exception e) {
-            log.error("Failed to fetch encrypted file for uuid={}: {}", uuid, e.getMessage());
+            log.error("Failed to generate signed URL for uuid={}: {}", uuid, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Failed to download encrypted file."));
+                    .body(new ErrorResponse("Failed to generate download link."));
         }
 
         int remaining = otpService.decrementAndMaybeDelete(otp, entry);
-
-        if (remaining == 0) {
-            cleanupService.deleteAsync(uuid);
-        }
+        if (remaining == 0) cleanupService.deleteAsync(uuid);
 
         log.info("DownloadEncrypted: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
 
-        ResponseEntity.BodyBuilder response = ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "no-store")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM);
-
-        if (entry.decryptionKey() != null && !entry.decryptionKey().isBlank()) {
-            response.header("X-FolderDrop-Key", entry.decryptionKey());
-        }
-
-        return response.body(encryptedBytes);
+        // Return signed URL + key — browser fetches file directly from Supabase CDN
+        return ResponseEntity.ok(new DownloadTokenResponse(signedUrl, entry.decryptionKey()));
     }
 
     @GetMapping("/info/{otp}")
-    @Operation(summary = "Get OTP metadata (remaining downloads) without consuming it")
+    @Operation(summary = "Get OTP metadata without consuming it")
     public ResponseEntity<?> info(@PathVariable String otp) {
         if (otp == null || !otp.matches(OTP_PATTERN)) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Invalid code format."));
@@ -197,7 +193,8 @@ public class DownloadController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("Internal cleanup failed for uuid={}: {}", uuid, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Deletion failed."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Deletion failed."));
         }
     }
 
@@ -209,4 +206,5 @@ public class DownloadController {
 
     public record ErrorResponse(String error) {}
     public record InfoResponse(int maxDownloads, int remaining) {}
+    public record DownloadTokenResponse(String url, String key) {}
 }

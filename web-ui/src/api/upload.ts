@@ -50,7 +50,12 @@ export async function uploadZip(
 
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable) {
-        onProgress({ phase: 'uploading', percent: Math.round((e.loaded / e.total) * 100) });
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress({ phase: 'uploading', percent: pct });
+        // Once bytes are sent, show that the server is saving to cloud
+        if (pct === 100) {
+          onProgress({ phase: 'uploading', percent: 100 });
+        }
       }
     });
 
