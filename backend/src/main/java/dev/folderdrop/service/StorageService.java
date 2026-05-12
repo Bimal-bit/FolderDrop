@@ -88,31 +88,42 @@ public class StorageService {
      * @param originalName the original folder name (informational)
      */
     public void upload(String uuid, MultipartFile file, String otp, String originalName) {
+        try {
+            uploadBytes(uuid, file.getBytes(), file.getContentType() != null
+                    ? file.getContentType() : "application/octet-stream");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload file to storage", e);
+        }
+    }
+
+    /**
+     * Uploads raw bytes to Supabase Storage.
+     * Called directly from UploadController after reading bytes once.
+     */
+    public void uploadBytes(String uuid, byte[] bytes, String contentType) {
         String path = objectPath(uuid);
         String bucket = props.getSupabase().getBucket();
         String url = storageBase() + "/object/" + bucket + "/" + path;
 
         HttpHeaders headers = authHeaders();
-        headers.setContentType(MediaType.parseMediaType("application/zip"));
-        // x-upsert: false — fail if object already exists (shouldn't happen with UUID keys)
+        headers.setContentType(MediaType.parseMediaType(
+                contentType != null ? contentType : "application/octet-stream"));
         headers.set("x-upsert", "false");
-        // Store original name as cache-control metadata (Supabase supports this header)
         headers.set("Cache-Control", "no-cache");
 
         try {
-            byte[] bytes = file.getBytes();
             HttpEntity<byte[]> entity = new HttpEntity<>(bytes, headers);
-
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
 
             if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new RuntimeException("Supabase upload returned: " + response.getStatusCode());
+                throw new RuntimeException("Supabase upload returned: " + response.getStatusCode()
+                        + " body=" + response.getBody());
             }
 
             log.info("Uploaded to Supabase Storage: bucket={}, path={}, size={}B", bucket, path, bytes.length);
         } catch (Exception e) {
-            log.error("Supabase upload failed for path {}: {}", path, e.getMessage());
-            throw new RuntimeException("Failed to upload file to storage", e);
+            log.error("Supabase upload failed for path={}: {}", path, e.getMessage());
+            throw new RuntimeException("Failed to upload file to storage: " + e.getMessage(), e);
         }
     }
 

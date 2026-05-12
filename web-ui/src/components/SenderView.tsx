@@ -158,11 +158,11 @@ export function SenderView({ onBack }: SenderViewProps) {
 
     setStatus('zipping');
     setProgress(0);
-    setProgressLabel(mode === 'folder' ? 'Waking server...' : 'Waking server...');
+    setProgressLabel(mode === 'folder' ? 'Zipping folder...' : 'Preparing files...');
     setUploadSpeed('');
 
-    // Wake the Render backend in parallel while we start zipping
-    const wakePromise = pingBackend();
+    // Fire-and-forget wake ping — don't block zipping or uploading on it
+    pingBackend();
 
     try {
       let zipBlob: Blob;
@@ -201,7 +201,6 @@ export function SenderView({ onBack }: SenderViewProps) {
       setProgressLabel('Encrypting...');
       const encrypted = await encryptBlob(zipBlob);
       setProgressLabel('Uploading encrypted archive...');
-      await wakePromise; // ensure backend is awake before sending
       uploadStartRef.current = Date.now();
       uploadedBytesRef.current = 0;
 

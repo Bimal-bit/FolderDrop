@@ -76,6 +76,13 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- Apache HttpClient 5 — connection pooling + timeouts for Supabase calls -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.3.1</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
