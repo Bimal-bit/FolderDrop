@@ -71,7 +71,7 @@ public class StorageService {
     }
 
     private String objectPath(String uuid) {
-        return KEY_PREFIX + uuid + ".zip";
+        return KEY_PREFIX + uuid + ".fdenc";
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -198,8 +198,9 @@ public class StorageService {
      */
     public org.springframework.core.io.Resource streamFromUrl(String url) {
         try {
+            // Signed URLs are pre-authenticated — do NOT send auth headers
             ResponseEntity<byte[]> response = restTemplate.exchange(
-                    url, HttpMethod.GET, new HttpEntity<Void>(authHeaders()), byte[].class);
+                    url, HttpMethod.GET, HttpEntity.EMPTY, byte[].class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
                 throw new RuntimeException("Supabase stream returned: " + response.getStatusCode());

@@ -1,8 +1,6 @@
 package dev.folderdrop.controller;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,28 +102,27 @@ public class UploadController {
                     .body(new ErrorResponse("Failed to read uploaded file."));
         }
 
-        // Run OTP store (Upstash ~50ms) and file upload (Supabase ~varies) in parallel
-        CompletableFuture<String> otpFuture = CompletableFuture.supplyAsync(
-                () -> otpService.generateAndStore(uuid, clampedMax, decryptionKey));
-
-        CompletableFuture<Void> uploadFuture = CompletableFuture.runAsync(
-                () -> storageService.uploadBytes(uuid, fileBytes, contentType));
-
+        // Store OTP first, then upload file — sequential so a Supabase failure
+        // returns an error to the user instead of giving them a code with no file
+        String otp;
         try {
-            // Wait for both — if either fails the exception propagates
-            CompletableFuture.allOf(otpFuture, uploadFuture).get();
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            log.error("Upload pipeline failed for uuid={}: {}", uuid, cause.getMessage());
+            otp = otpService.generateAndStore(uuid, clampedMax, decryptionKey);
+        } catch (Exception e) {
+            log.error("OTP store failed for uuid={}: {}", uuid, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Upload failed: " + cause.getMessage()));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Upload interrupted."));
+                    .body(new ErrorResponse("Failed to generate code. Please try again."));
         }
 
-        String otp = otpFuture.join();
+        try {
+            storageService.uploadBytes(uuid, fileBytes, contentType);
+        } catch (Exception e) {
+            log.error("Supabase upload failed for uuid={}: {}", uuid, e.getMessage());
+            // Clean up the OTP so the user doesn't get a code with no file
+            otpService.delete(otp);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to store file. Please try again."));
+        }
+
         log.info("Upload: uuid={}, otp={}, maxDownloads={}, ip={}, size={}B",
                 uuid, otp, clampedMax, clientIp, fileBytes.length);
 
