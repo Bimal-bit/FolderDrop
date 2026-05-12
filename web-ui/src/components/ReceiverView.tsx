@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useContext } from 'react';
 import { OtpInput } from './OtpInput';
 import { downloadAndDecrypt, isValidOtp } from '../api/download';
 import { AppContext } from '../context/AppContext';
+import { ParticleBar } from './ParticleBar';
 
 type ReceiverStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -143,13 +144,7 @@ export function ReceiverView({ onBack, initialCode = '' }: ReceiverViewProps) {
       {/* Download progress bar */}
       {status === 'loading' && (
         <div className="progress-block">
-          <div className="progress-label-row">
-            <span>{dlLabel}</span>
-            <span>{dlProgress}%</span>
-          </div>
-          <div className="progress-bar-track">
-            <div className="progress-bar-fill" style={{ width: `${dlProgress}%` }} />
-          </div>
+          <ParticleBar progress={dlProgress} label={dlLabel} />
         </div>
       )}
 
