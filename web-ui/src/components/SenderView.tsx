@@ -5,6 +5,7 @@ import { encryptBlob } from '../api/crypto';
 import { QrCode } from './QrCode';
 import { ShareButtons } from './ShareButtons';
 import { FilePreview } from './FilePreview';
+import { ParticleBar } from './ParticleBar';
 import { useCountdown } from '../hooks/useCountdown';
 import { useConfetti } from '../hooks/useConfetti';
 import { AppContext } from '../context/AppContext';
@@ -399,19 +400,14 @@ export function SenderView({ onBack }: SenderViewProps) {
       {/* ── Progress ── */}
       {(status === 'zipping' || status === 'uploading') && (
         <div className="progress-block">
-          <div className="progress-label-row">
-            <span>{progressLabel}</span>
-            <div className="progress-right">
-              {uploadSpeed && <span className="upload-speed">{uploadSpeed}</span>}
-              <span>{progress}%</span>
-            </div>
-          </div>
-          <div className="progress-bar-track">
-            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
-          </div>
+          <ParticleBar
+            progress={progress}
+            label={progressLabel}
+            sublabel={uploadSpeed || undefined}
+          />
           <p className="progress-meta">
             {fileMode === 'folder' ? 'Folder' : 'Files'} {selectedName}
-            {selectedSize > 0 && <span className="progress-size"> - {formatBytes(selectedSize)}</span>}
+            {selectedSize > 0 && <span className="progress-size"> — {formatBytes(selectedSize)}</span>}
           </p>
         </div>
       )}
