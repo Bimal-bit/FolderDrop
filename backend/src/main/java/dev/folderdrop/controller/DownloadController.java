@@ -95,8 +95,7 @@ public class DownloadController {
         if (remaining == 0) cleanupService.deleteAsync(uuid);
 
         log.info("Download redirect: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(signedUrl)).build();
-    }
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(signedUrl)).build();    }
 
     /**
      * GET /api/download/{otp}/encrypted
@@ -147,11 +146,11 @@ public class DownloadController {
         }
 
         int remaining = otpService.decrementAndMaybeDelete(otp, entry);
-        if (remaining == 0) cleanupService.deleteAsync(uuid);
+        // NOTE: do NOT delete here — file must be fetched first
 
         log.info("DownloadEncrypted: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
 
-        // Stream from Supabase — avoids loading entire file into heap
+        // Fetch the file bytes BEFORE scheduling cleanup
         org.springframework.core.io.Resource streamBody;
         try {
             streamBody = storageService.streamFromUrl(signedUrl);
@@ -160,6 +159,9 @@ public class DownloadController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Failed to stream file."));
         }
+
+        // Schedule cleanup only after bytes are safely in memory
+        if (remaining == 0) cleanupService.deleteAsync(uuid);
 
         org.springframework.http.ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
                 .header("Cache-Control", "no-store")
