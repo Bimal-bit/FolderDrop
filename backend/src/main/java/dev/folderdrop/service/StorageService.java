@@ -192,6 +192,25 @@ public class StorageService {
         return storageBase() + normalizedPath;
     }
 
+    /**
+     * Streams a file from a URL as a Spring Resource — no heap buffering.
+     * Used by the download endpoint to pipe Supabase bytes to the browser.
+     */
+    public org.springframework.core.io.Resource streamFromUrl(String url) {
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<Void>(authHeaders()), byte[].class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new RuntimeException("Supabase stream returned: " + response.getStatusCode());
+            }
+            return new org.springframework.core.io.ByteArrayResource(response.getBody());
+        } catch (Exception e) {
+            log.error("Supabase stream failed for url={}: {}", url, e.getMessage());
+            throw new RuntimeException("Failed to stream file: " + e.getMessage(), e);
+        }
+    }
+
     public byte[] download(String uuid) {
         String path = objectPath(uuid);
         String bucket = props.getSupabase().getBucket();

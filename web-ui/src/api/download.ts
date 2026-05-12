@@ -9,32 +9,25 @@ export async function downloadAndDecrypt(
   otp: string,
   onProgress?: (p: DownloadProgress) => void
 ): Promise<void> {
-  // Step 1: redeem OTP — get signed Supabase URL + decryption key (~100ms, no file bytes)
-  const redeemRes = await fetch(`/api/download/${encodeURIComponent(otp)}/encrypted`);
-  if (!redeemRes.ok) {
-    throw new Error(await readError(redeemRes));
-  }
-
-  const { url: signedUrl, key } = await redeemRes.json() as { url: string; key: string | null };
-
-  if (!key) {
-    throw new Error('Missing decryption key. Use the secure FolderDrop link or ask the sender for the key.');
-  }
-
-  // Step 2: fetch encrypted file directly from Supabase CDN with progress tracking
   onProgress?.({ phase: 'fetching', percent: 0 });
 
-  const fileRes = await fetch(signedUrl);
-  if (!fileRes.ok) {
-    throw new Error(`Failed to fetch file from storage (HTTP ${fileRes.status}).`);
+  // Fetch encrypted file — backend streams from Supabase, returns key in header
+  const response = await fetch(`/api/download/${encodeURIComponent(otp)}/encrypted`);
+  if (!response.ok) {
+    throw new Error(await readError(response));
   }
 
-  // Stream with progress if Content-Length is available
+  const key = response.headers.get('X-FolderDrop-Key');
+  if (!key) {
+    throw new Error('Missing decryption key. Ask the sender to reshare the file.');
+  }
+
+  // Stream response body with progress
   let encrypted: Blob;
-  const contentLength = fileRes.headers.get('Content-Length');
-  if (contentLength && fileRes.body) {
+  const contentLength = response.headers.get('Content-Length');
+  if (contentLength && response.body) {
     const total = parseInt(contentLength, 10);
-    const reader = fileRes.body.getReader();
+    const reader = response.body.getReader();
     const chunks: Uint8Array[] = [];
     let received = 0;
 
@@ -51,16 +44,16 @@ export async function downloadAndDecrypt(
     for (const chunk of chunks) { all.set(chunk, offset); offset += chunk.length; }
     encrypted = new Blob([all], { type: 'application/octet-stream' });
   } else {
-    encrypted = await fileRes.blob();
+    encrypted = await response.blob();
     onProgress?.({ phase: 'fetching', percent: 100 });
   }
 
-  // Step 3: decrypt in browser
+  // Decrypt in browser
   onProgress?.({ phase: 'decrypting', percent: 0 });
   const decrypted = await decryptBlob(encrypted, key);
   onProgress?.({ phase: 'decrypting', percent: 100 });
 
-  // Step 4: trigger download
+  // Trigger download
   const blobUrl = URL.createObjectURL(decrypted);
   const anchor = document.createElement('a');
   anchor.href = blobUrl;

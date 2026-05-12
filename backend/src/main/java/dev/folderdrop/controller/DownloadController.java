@@ -101,15 +101,14 @@ public class DownloadController {
     /**
      * GET /api/download/{otp}/encrypted
      *
-     * Returns { "url": "<supabase-signed-url>", "key": "<decryption-key>" }
-     * The browser fetches the file directly from Supabase — the backend never
-     * buffers the file bytes, so large files don't OOM and there's no double transfer.
+     * Validates OTP, streams the encrypted file from Supabase directly to the
+     * browser, and returns the decryption key in the X-FolderDrop-Key header.
      *
-     * Signed URL is generated BEFORE decrementing the OTP so a Supabase failure
-     * doesn't burn the code.
+     * Streaming avoids buffering the entire file in heap memory.
+     * Signed URL is generated BEFORE decrementing so a Supabase failure won't burn the code.
      */
     @GetMapping("/download/{otp}/encrypted")
-    @Operation(summary = "Redeem OTP — returns signed URL + decryption key for client-side download")
+    @Operation(summary = "Redeem OTP — streams encrypted file with decryption key header")
     public ResponseEntity<?> downloadEncrypted(
             @PathVariable String otp,
             HttpServletRequest request) {
@@ -152,8 +151,26 @@ public class DownloadController {
 
         log.info("DownloadEncrypted: otp={}, uuid={}, remaining={}, ip={}", otp, uuid, remaining, clientIp);
 
-        // Return signed URL + key — browser fetches file directly from Supabase CDN
-        return ResponseEntity.ok(new DownloadTokenResponse(signedUrl, entry.decryptionKey()));
+        // Stream from Supabase — avoids loading entire file into heap
+        org.springframework.core.io.Resource streamBody;
+        try {
+            streamBody = storageService.streamFromUrl(signedUrl);
+        } catch (Exception e) {
+            log.error("Failed to stream file for uuid={}: {}", uuid, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to stream file."));
+        }
+
+        org.springframework.http.ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
+                .header("Cache-Control", "no-store")
+                .header("Access-Control-Expose-Headers", "X-FolderDrop-Key")
+                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
+
+        if (entry.decryptionKey() != null && !entry.decryptionKey().isBlank()) {
+            builder.header("X-FolderDrop-Key", entry.decryptionKey());
+        }
+
+        return builder.body(streamBody);
     }
 
     @GetMapping("/info/{otp}")
