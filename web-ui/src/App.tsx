@@ -4,7 +4,6 @@ import { SenderView } from './components/SenderView';
 import { ReceiverView } from './components/ReceiverView';
 import { ToastContainer } from './components/ToastContainer';
 import { AnimatedBackground } from './components/AnimatedBackground';
-import { TiltCard } from './components/TiltCard';
 import { AppContext } from './context/AppContext';
 import { useToast } from './hooks/useToast';
 
@@ -22,46 +21,17 @@ const fadeUp = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
 };
 
+const TRUST_ITEMS = [
+  { value: '10 min', label: 'code expiry' },
+  { value: 'AES-256', label: 'local encryption' },
+  { value: '150 MB', label: 'transfer limit' },
+];
+
 function FolderIcon() {
   return (
     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
     </svg>
-  );
-}
-
-function HeroHeading() {
-  const lines = [
-    { text: 'Share code.', accent: false },
-    { text: 'Get a key.', accent: false },
-    { text: 'Done.', accent: true },
-  ];
-  return (
-    <motion.h1
-      className="hero-title"
-      initial="hidden"
-      animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.16, delayChildren: 0.08 } } }}
-    >
-      {lines.map((line) => (
-        <motion.span
-          key={line.text}
-          className={line.accent ? 'hero-line hero-accent' : 'hero-line'}
-          variants={{
-            hidden: { opacity: 0, y: 28, scale: 0.96, filter: 'blur(10px)' },
-            visible: {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              filter: 'blur(0px)',
-              transition: { duration: 0.68, ease: [0.22, 1, 0.36, 1] },
-            },
-          }}
-        >
-          {line.text}
-        </motion.span>
-      ))}
-    </motion.h1>
   );
 }
 
@@ -228,46 +198,51 @@ export default function App() {
             <span className="brand-icon"><FolderIcon /></span>
             <span>FolderDrop</span>
           </button>
+          <div className="nav-status" aria-label="Security summary">
+            <span>Encrypted</span>
+            <span>Single-use codes</span>
+          </div>
           <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
             {theme === 'dark' ? 'Light' : 'Dark'}
           </button>
         </nav>
 
         <main className="landing">
-          <section className="hero">
-            <motion.div className="hero-orbit" aria-hidden="true" initial={{ opacity: 0, scale: 0.86 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7 }}>
-              <div className="orbit-ring orbit-ring-a" />
-              <div className="orbit-ring orbit-ring-b" />
-              <div className="orbit-cube">
-                <span className="cube-face cube-front" />
-                <span className="cube-face cube-back" />
-                <span className="cube-face cube-right" />
-                <span className="cube-face cube-left" />
-                <span className="cube-face cube-top" />
-                <span className="cube-face cube-bottom" />
+          <section className="workspace-hero">
+            <motion.div
+              className="hero-copy"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="badge">
+                <span className="dot" />
+                No login required
+              </div>
+              <h1 className="hero-title">Move a project folder with a short code.</h1>
+              <p className="hero-sub">
+                Share encrypted files from your editor, then redeem them once in the browser. Built for quick handoffs, reviews, and device-to-device transfers.
+              </p>
+              <div className="hero-actions">
+                <button className="cta" onClick={showReceive}>
+                  Redeem code
+                  <ArrowIcon />
+                </button>
+                <button className="cta cta-secondary" onClick={showSend}>
+                  Share files
+                </button>
+              </div>
+              <div className="trust-strip" aria-label="FolderDrop transfer details">
+                {TRUST_ITEMS.map(item => (
+                  <div className="trust-item" key={item.label}>
+                    <strong>{item.value}</strong>
+                    <span>{item.label}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
-            <motion.div className="badge" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <span className="dot" />
-              No login required
-            </motion.div>
-            <HeroHeading />
-            <motion.p className="hero-sub" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.5 }}>
-              No accounts. No unknown servers. A 6-digit code, valid for 10 minutes, that self-destructs on first use.
-            </motion.p>
-            <motion.div className="hero-actions" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.45 }}>
-              <button className="cta" onClick={showReceive}>
-                Redeem a code
-                <ArrowIcon />
-              </button>
-              <button className="cta cta-secondary" onClick={showSend}>
-                Share a file
-              </button>
-            </motion.div>
-          </section>
 
-          <section className="card-wrap" aria-live="polite">
-            <TiltCard className="app-card-tilt" maxTilt={8} scale={1.01}>
+            <section className="card-wrap" aria-live="polite" aria-label="Transfer panel">
               <motion.div className="card app-card" layout>
                 <AnimatePresence mode="wait">
                   {mode === 'home' && (
@@ -306,7 +281,7 @@ export default function App() {
                   )}
                 </AnimatePresence>
               </motion.div>
-            </TiltCard>
+            </section>
           </section>
 
           <FeaturesSection />
