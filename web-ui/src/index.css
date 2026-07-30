@@ -143,6 +143,50 @@ button:disabled {
   to { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes soft-rise {
+  0% { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes signal-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes packet-flow {
+  0% { left: 7%; opacity: 0; transform: translateY(-50%) scaleX(0.35); }
+  12% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { left: 86%; opacity: 0; transform: translateY(-50%) scaleX(1); }
+}
+
+@keyframes lane-pulse {
+  0%, 100% { opacity: 0.36; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes panel-scan {
+  0% { transform: translateX(-120%); opacity: 0; }
+  22% { opacity: 1; }
+  58% { opacity: 0.55; }
+  100% { transform: translateX(120%); opacity: 0; }
+}
+
+@keyframes glow-border {
+  0%, 100% { border-color: var(--border); box-shadow: var(--card-shadow); }
+  50% { border-color: var(--drop-border); box-shadow: var(--card-shadow), var(--accent-glow); }
+}
+
+@keyframes icon-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes digit-ready {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
 .particle-canvas {
   position: fixed;
   inset: 0;
@@ -208,6 +252,7 @@ button:disabled {
 .brand-icon {
   width: 42px;
   height: 42px;
+  animation: icon-breathe 4.8s ease-in-out infinite;
 }
 
 .nav-status {
@@ -298,6 +343,7 @@ button:disabled {
   font-weight: 800;
   line-height: 0.98;
   letter-spacing: 0;
+  animation: soft-rise 0.58s ease both;
 }
 
 .hero-sub {
@@ -306,6 +352,7 @@ button:disabled {
   font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 600;
   line-height: 1.65;
+  animation: soft-rise 0.62s ease 0.08s both;
 }
 
 .hero-actions {
@@ -317,6 +364,7 @@ button:disabled {
 .cta,
 .download-btn,
 .upload-start-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -328,7 +376,26 @@ button:disabled {
   color: var(--accent-ink);
   font-weight: 800;
   letter-spacing: 0;
+  overflow: hidden;
   transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.cta::before,
+.download-btn::before,
+.upload-start-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.22) 45%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 520ms ease;
+}
+
+.cta > *,
+.download-btn > *,
+.upload-start-btn > * {
+  position: relative;
+  z-index: 1;
 }
 
 .cta {
@@ -349,6 +416,12 @@ button:disabled {
   box-shadow: var(--accent-glow);
 }
 
+.cta:hover::before,
+.download-btn:hover:not(:disabled)::before,
+.upload-start-btn:hover:not(:disabled)::before {
+  transform: translateX(120%);
+}
+
 .trust-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -363,6 +436,22 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface-soft);
+  animation: soft-rise 0.48s ease both;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.trust-item:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.trust-item:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.trust-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--drop-border);
+  background: var(--accent-soft);
 }
 
 .trust-item strong {
@@ -381,6 +470,110 @@ button:disabled {
   line-height: 1.35;
 }
 
+.transfer-signal {
+  position: relative;
+  display: grid;
+  grid-template-columns: 54px 1fr 54px;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 520px);
+  min-height: 92px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.transfer-signal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, var(--accent-soft), transparent);
+  animation: panel-scan 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.signal-node {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid var(--drop-border);
+  border-radius: 8px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  animation: signal-float 3.6s ease-in-out infinite;
+}
+
+.signal-node-right {
+  animation-delay: 0.4s;
+}
+
+.signal-node-right span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.signal-lanes {
+  position: relative;
+  height: 54px;
+}
+
+.signal-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--drop-border), transparent);
+  animation: lane-pulse 2.8s ease-in-out infinite;
+}
+
+.signal-lane:first-child {
+  top: 18%;
+  animation-delay: 0.3s;
+}
+
+.signal-lane-mid {
+  animation-delay: 0.8s;
+}
+
+.signal-lane:nth-child(3) {
+  top: 82%;
+  animation-delay: 1.2s;
+}
+
+.signal-packet {
+  position: absolute;
+  top: 50%;
+  left: 7%;
+  width: 42px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 18px var(--accent-dim);
+  transform: translateY(-50%);
+  animation: packet-flow 3.8s ease-in-out infinite;
+}
+
+.signal-packet-b {
+  top: 18%;
+  width: 30px;
+  animation-delay: 0.9s;
+}
+
+.signal-packet-c {
+  top: 82%;
+  width: 24px;
+  animation-delay: 1.75s;
+}
+
 .card-wrap {
   width: 100%;
 }
@@ -393,7 +586,17 @@ button:disabled {
   border-radius: 8px;
   background: var(--surface-strong);
   box-shadow: var(--card-shadow);
-  animation: fade-in 0.4s ease both;
+  animation: fade-in 0.4s ease both, glow-border 7s ease-in-out infinite;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, var(--accent-soft) 42%, transparent 68%);
+  transform: translateX(-120%);
+  animation: panel-scan 6.8s ease-in-out 1.2s infinite;
+  pointer-events: none;
 }
 
 .app-card {
@@ -451,6 +654,7 @@ button:disabled {
 }
 
 .mode-btn {
+  position: relative;
   display: flex;
   min-height: 154px;
   flex-direction: column;
@@ -462,13 +666,33 @@ button:disabled {
   background: var(--surface-soft);
   color: var(--text-primary);
   text-align: left;
+  overflow: hidden;
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.mode-btn::after,
+.feat-card::after,
+.drop-zone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 0%, var(--accent-soft) 46%, transparent 72%);
+  transform: translateX(-125%);
+  transition: transform 520ms ease;
+  pointer-events: none;
 }
 
 .mode-btn:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+.mode-btn:hover::after,
+.feat-card:hover::after,
+.drop-zone:hover::after,
+.drop-zone--active::after {
+  transform: translateX(125%);
 }
 
 .mode-btn-label {
@@ -536,11 +760,13 @@ button:disabled {
 }
 
 .feat-card {
+  position: relative;
   min-height: 214px;
   padding: 22px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface-soft);
+  overflow: hidden;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -764,6 +990,7 @@ button:disabled {
   border-radius: 8px;
   background: var(--drop-bg);
   text-align: center;
+  overflow: hidden;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
@@ -974,6 +1201,7 @@ kbd {
 .otp-digit {
   border-color: var(--drop-border);
   background: var(--accent-soft);
+  animation: digit-ready 1.8s ease-in-out infinite;
 }
 
 .otp-box::placeholder {
@@ -1273,6 +1501,17 @@ kbd {
     font-size: clamp(2.35rem, 12vw, 3.75rem);
   }
 
+  .transfer-signal {
+    grid-template-columns: 46px 1fr 46px;
+    min-height: 78px;
+    padding: 12px;
+  }
+
+  .signal-node {
+    width: 46px;
+    height: 46px;
+  }
+
   .trust-strip,
   .mode-buttons,
   .feat-grid,
@@ -1301,6 +1540,17 @@ kbd {
     width: clamp(40px, 13vw, 56px);
     height: clamp(52px, 14vw, 62px);
     font-size: clamp(1.22rem, 6vw, 1.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
   }
 }
 
